@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -9,6 +10,7 @@ interface ModalState {
 }
 
 export default function UtilitiesPage() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSection, setSelectedSection] = useState<'division' | 'doctype' | 'classification' | 'accounts' | null>(null);
   const [modal, setModal] = useState<ModalState>({ type: null });
@@ -38,6 +40,26 @@ export default function UtilitiesPage() {
     { name: 'Mark Davis', email: 'mark@dict.gov.ph', role: 'Admin', division: 'Finance' },
     { name: 'Emma Wilson', email: 'emma@dict.gov.ph', role: 'User', division: 'HR' },
   ]);
+
+  // Edit state for divisions
+  const [editDivisionIndex, setEditDivisionIndex] = useState<number | null>(null);
+  const [editDivisionData, setEditDivisionData] = useState({ name: '', abvr: '' });
+  const [showEditDivisionAside, setShowEditDivisionAside] = useState(false);
+
+  // Edit state for document types
+  const [editDocTypeIndex, setEditDocTypeIndex] = useState<number | null>(null);
+  const [editDocTypeName, setEditDocTypeName] = useState('');
+  const [showEditDocTypeAside, setShowEditDocTypeAside] = useState(false);
+
+  // Edit state for classifications
+  const [editClassificationIndex, setEditClassificationIndex] = useState<number | null>(null);
+  const [editClassificationName, setEditClassificationName] = useState('');
+  const [showEditClassificationAside, setShowEditClassificationAside] = useState(false);
+
+  // Edit state for user accounts
+  const [editAccountIndex, setEditAccountIndex] = useState<number | null>(null);
+  const [editAccountData, setEditAccountData] = useState({ name: '', email: '', role: 'User', password: '', division: '' });
+  const [showEditAccountAside, setShowEditAccountAside] = useState(false);
 
   // Save document types to localStorage
   useEffect(() => {
@@ -111,6 +133,98 @@ export default function UtilitiesPage() {
       count: 8,
     },
   ];
+
+  // Edit handlers
+  const handleEditDivision = (index: number) => {
+    setEditDivisionIndex(index);
+    setEditDivisionData({ name: ['Finance', 'IT', 'HR', 'Operations', 'Legal'][index], abvr: '' });
+    setShowEditDivisionAside(true);
+  };
+
+  const handleSaveDivision = () => {
+    if (editDivisionData.name.trim()) {
+      const newDivisions = ['Finance', 'IT', 'HR', 'Operations', 'Legal'];
+      newDivisions[editDivisionIndex!] = editDivisionData.name;
+      setShowEditDivisionAside(false);
+      setEditDivisionIndex(null);
+      setEditDivisionData({ name: '', abvr: '' });
+    }
+  };
+
+  const handleDeleteDivision = (index: number) => {
+    // Update all accounts that had this division
+    setUserAccounts(userAccounts.map(acc => acc.division === ['Finance', 'IT', 'HR', 'Operations', 'Legal'][index] ? { ...acc, division: '' } : acc));
+  };
+
+  const handleEditDocType = (index: number) => {
+    setEditDocTypeIndex(index);
+    setEditDocTypeName(documentTypes[index]);
+    setShowEditDocTypeAside(true);
+  };
+
+  const handleSaveDocType = () => {
+    if (editDocTypeName.trim()) {
+      const newDocTypes = [...documentTypes];
+      newDocTypes[editDocTypeIndex!] = editDocTypeName;
+      setDocumentTypes(newDocTypes);
+      setShowEditDocTypeAside(false);
+      setEditDocTypeIndex(null);
+      setEditDocTypeName('');
+    }
+  };
+
+  const handleDeleteDocType = (index: number) => {
+    setDocumentTypes(documentTypes.filter((_, i) => i !== index));
+  };
+
+  const handleEditClassification = (index: number) => {
+    setEditClassificationIndex(index);
+    setEditClassificationName(documentClassifications[index].name);
+    setShowEditClassificationAside(true);
+  };
+
+  const handleSaveClassification = () => {
+    if (editClassificationName.trim()) {
+      const newClassifications = [...documentClassifications];
+      newClassifications[editClassificationIndex!] = { ...newClassifications[editClassificationIndex!], name: editClassificationName };
+      setDocumentClassifications(newClassifications);
+      setShowEditClassificationAside(false);
+      setEditClassificationIndex(null);
+      setEditClassificationName('');
+    }
+  };
+
+  const handleDeleteClassification = (index: number) => {
+    setDocumentClassifications(documentClassifications.filter((_, i) => i !== index));
+  };
+
+  const handleEditAccount = (index: number) => {
+    setEditAccountIndex(index);
+    const sourceAccount = userAccounts[index];
+    setEditAccountData({ 
+      name: sourceAccount.name, 
+      email: sourceAccount.email, 
+      role: sourceAccount.role, 
+      password: '',
+      division: sourceAccount.division 
+    });
+    setShowEditAccountAside(true);
+  };
+
+  const handleSaveAccount = () => {
+    if (editAccountData.name.trim() && editAccountData.email.trim()) {
+      const newAccounts = [...userAccounts];
+      newAccounts[editAccountIndex!] = editAccountData;
+      setUserAccounts(newAccounts);
+      setShowEditAccountAside(false);
+      setEditAccountIndex(null);
+      setEditAccountData({ name: '', email: '', role: 'User', password: '', division: '' });
+    }
+  };
+
+  const handleDeleteAccount = (index: number) => {
+    setUserAccounts(userAccounts.filter((_, i) => i !== index));
+  };
 
   const renderModalContent = () => {
     switch (modal.type) {
@@ -225,7 +339,7 @@ export default function UtilitiesPage() {
       {showAddAccountAside && (
         <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
           {/* Aside Header */}
-          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center flex-shrink-0 border-b-4 border-blue-700">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
             <h2 className="text-2xl font-bold">Add User Account</h2>
             <button
               onClick={() => {
@@ -325,7 +439,7 @@ export default function UtilitiesPage() {
           </div>
 
           {/* Aside Footer */}
-          <div className="border-t border-gray-200 p-4 flex gap-2 flex-shrink-0">
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
             <button
               onClick={() => {
                 setShowAddAccountAside(false);
@@ -354,7 +468,7 @@ export default function UtilitiesPage() {
       {showAddClassificationAside && (
         <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
           {/* Aside Header */}
-          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center flex-shrink-0 border-b-4 border-blue-700">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
             <h2 className="text-2xl font-bold">Add Classification</h2>
             <button
               onClick={() => {
@@ -408,7 +522,7 @@ export default function UtilitiesPage() {
           </div>
 
           {/* Aside Footer */}
-          <div className="border-t border-gray-200 p-4 flex gap-2 flex-shrink-0">
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
             <button
               onClick={() => {
                 setShowAddClassificationAside(false);
@@ -437,7 +551,7 @@ export default function UtilitiesPage() {
       {showAddDocTypeAside && (
         <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
           {/* Aside Header */}
-          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center flex-shrink-0 border-b-4 border-blue-700">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
             <h2 className="text-2xl font-bold">Add Document Type</h2>
             <button
               onClick={() => {
@@ -491,7 +605,7 @@ export default function UtilitiesPage() {
           </div>
 
           {/* Aside Footer */}
-          <div className="border-t border-gray-200 p-4 flex gap-2 flex-shrink-0">
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
             <button
               onClick={() => {
                 setShowAddDocTypeAside(false);
@@ -520,7 +634,7 @@ export default function UtilitiesPage() {
       {showAddDivisionAside && (
         <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
           {/* Aside Header */}
-          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center flex-shrink-0 border-b-4 border-blue-700">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
             <h2 className="text-2xl font-bold">Add a New Division</h2>
             <button
               onClick={() => {
@@ -545,7 +659,7 @@ export default function UtilitiesPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">ID</label>
                   <input 
                     type="text" 
-                    value={`DIV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`}
+                    value="DIV-SYS-AUTO"
                     disabled
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
@@ -598,7 +712,7 @@ export default function UtilitiesPage() {
                     </thead>
                     <tbody>
                       <tr className="bg-blue-50 border-b border-gray-200">
-                        <td className="px-4 py-2 text-xs text-gray-700">DIV-{Math.random().toString(36).substr(2, 9).toUpperCase()}</td>
+                        <td className="px-4 py-2 text-xs text-gray-700">DIV-SYS-AUTO</td>
                         <td className="px-4 py-2 text-xs text-gray-700">{divisionName || '---'}</td>
                         <td className="px-4 py-2 text-xs text-gray-700">{divisionAbvr || '---'}</td>
                       </tr>
@@ -610,7 +724,7 @@ export default function UtilitiesPage() {
           </div>
 
           {/* Aside Footer */}
-          <div className="border-t border-gray-200 p-4 flex gap-2 flex-shrink-0">
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
             <button
               onClick={() => {
                 setShowAddDivisionAside(false);
@@ -631,6 +745,158 @@ export default function UtilitiesPage() {
             >
               Save
             </button>
+          </div>
+        </div>
+      )}
+      {/* Right Aside Panel for Edit Division */}
+      {showEditDivisionAside && (
+        <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
+            <h2 className="text-2xl font-bold">Edit Division</h2>
+            <button onClick={() => setShowEditDivisionAside(false)} className="p-1 hover:bg-blue-800 rounded-lg transition">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
+                <input type="text" value={editDivisionData.name} onChange={(e) => setEditDivisionData({ ...editDivisionData, name: e.target.value })} placeholder="Division name" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Preview</h3>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead><tr className="bg-gray-100 border-b border-gray-200"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Name</th></tr></thead>
+                    <tbody><tr className="bg-blue-50 border-b border-gray-200"><td className="px-4 py-2 text-xs text-gray-700">{editDivisionData.name || '---'}</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
+            <button onClick={() => setShowEditDivisionAside(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">Cancel</button>
+            <button onClick={handleSaveDivision} className="flex-1 px-4 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition">Save</button>
+          </div>
+        </div>
+      )}
+      {/* Right Aside Panel for Edit Document Type */}
+      {showEditDocTypeAside && (
+        <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
+            <h2 className="text-2xl font-bold">Edit Document Type</h2>
+            <button onClick={() => setShowEditDocTypeAside(false)} className="p-1 hover:bg-blue-800 rounded-lg transition">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Type Name</label>
+                <input type="text" value={editDocTypeName} onChange={(e) => setEditDocTypeName(e.target.value)} placeholder="Document type" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Preview</h3>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead><tr className="bg-gray-100 border-b border-gray-200"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Type</th></tr></thead>
+                    <tbody><tr className="bg-blue-50 border-b border-gray-200"><td className="px-4 py-2 text-xs text-gray-700">{editDocTypeName || '---'}</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
+            <button onClick={() => setShowEditDocTypeAside(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">Cancel</button>
+            <button onClick={handleSaveDocType} className="flex-1 px-4 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition">Save</button>
+          </div>
+        </div>
+      )}
+      {/* Right Aside Panel for Edit Classification */}
+      {showEditClassificationAside && (
+        <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
+            <h2 className="text-2xl font-bold">Edit Classification</h2>
+            <button onClick={() => setShowEditClassificationAside(false)} className="p-1 hover:bg-blue-800 rounded-lg transition">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Classification Name</label>
+                <input type="text" value={editClassificationName} onChange={(e) => setEditClassificationName(e.target.value)} placeholder="Classification name" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Preview</h3>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead><tr className="bg-gray-100 border-b border-gray-200"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Classification</th></tr></thead>
+                    <tbody><tr className="bg-blue-50 border-b border-gray-200"><td className="px-4 py-2 text-xs text-gray-700">{editClassificationName || '---'}</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
+            <button onClick={() => setShowEditClassificationAside(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">Cancel</button>
+            <button onClick={handleSaveClassification} className="flex-1 px-4 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition">Save</button>
+          </div>
+        </div>
+      )}
+      {/* Right Aside Panel for Edit Account */}
+      {showEditAccountAside && (
+        <div className="fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-lg z-50 flex flex-col">
+          <div className="bg-blue-900 text-white px-6 py-4 flex justify-between items-center shrink-0 border-b-4 border-blue-700">
+            <h2 className="text-2xl font-bold">Edit User Account</h2>
+            <button onClick={() => setShowEditAccountAside(false)} className="p-1 hover:bg-blue-800 rounded-lg transition">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                <input type="text" value={editAccountData.name} onChange={(e) => setEditAccountData({ ...editAccountData, name: e.target.value })} placeholder="Enter full name" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <input type="email" value={editAccountData.email} onChange={(e) => setEditAccountData({ ...editAccountData, email: e.target.value })} placeholder="Enter email address" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                <input type="password" value={editAccountData.password} onChange={(e) => setEditAccountData({ ...editAccountData, password: e.target.value })} placeholder="Enter password" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Division</label>
+                <input type="text" value={editAccountData.division} onChange={(e) => setEditAccountData({ ...editAccountData, division: e.target.value })} placeholder="Enter or select division" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Role</label>
+                <input type="text" value={editAccountData.role} onChange={(e) => setEditAccountData({ ...editAccountData, role: e.target.value })} placeholder="e.g., Admin, User, Moderator" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Preview</h3>
+                <div className="border border-gray-200 rounded-lg overflow-x-auto">
+                  <table className="w-full">
+                    <thead><tr className="bg-gray-100 border-b border-gray-200"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Name</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Email</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Division</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">Role</th></tr></thead>
+                    <tbody><tr className="bg-blue-50 border-b border-gray-200"><td className="px-4 py-2 text-xs text-gray-700">{editAccountData.name || '---'}</td><td className="px-4 py-2 text-xs text-gray-700">{editAccountData.email || '---'}</td><td className="px-4 py-2 text-xs text-gray-700">{editAccountData.division || '---'}</td><td className="px-4 py-2 text-xs"><span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">{editAccountData.role || '---'}</span></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 p-4 flex gap-2 shrink-0">
+            <button onClick={() => setShowEditAccountAside(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">Cancel</button>
+            <button onClick={handleSaveAccount} className="flex-1 px-4 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition">Save</button>
           </div>
         </div>
       )}
@@ -716,7 +982,9 @@ export default function UtilitiesPage() {
 
         {/* Logout Button */}
         <div className={`p-4 ${!sidebarOpen && 'flex justify-center'}`}>
-          <button className={`py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition ${sidebarOpen ? 'w-full' : 'p-2'}`}>
+          <button 
+            onClick={() => router.push('/login')}
+            className={`py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition ${sidebarOpen ? 'w-full' : 'p-2'}`}>
             {sidebarOpen ? 'LOGOUT' : '🚪'}
           </button>
         </div>
@@ -755,7 +1023,7 @@ export default function UtilitiesPage() {
                 key={utility.id}
                 onClick={() => {
                   if (['division', 'doctype', 'classification', 'accounts'].includes(utility.id)) {
-                    setSelectedSection(utility.id as any);
+                    setSelectedSection(utility.id as 'division' | 'doctype' | 'classification' | 'accounts');
                   }
                 }}
                 className={`px-6 py-3 font-medium rounded-lg transition ${
@@ -803,8 +1071,8 @@ export default function UtilitiesPage() {
                       <tr key={i} className="hover:bg-gray-50 transition">
                         <td className="px-4 py-3 text-gray-700">{item}</td>
                         <td className="px-4 py-3 flex justify-end gap-2">
-                          <button className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
-                          <button className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
+                          <button onClick={() => handleEditDivision(i)} className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
+                          <button onClick={() => handleDeleteDivision(i)} className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -848,8 +1116,8 @@ export default function UtilitiesPage() {
                       <tr key={i} className="hover:bg-gray-50 transition">
                         <td className="px-4 py-3 text-gray-700">{item}</td>
                         <td className="px-4 py-3 flex justify-end gap-2">
-                          <button className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
-                          <button className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
+                          <button onClick={() => handleEditDocType(i)} className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
+                          <button onClick={() => handleDeleteDocType(i)} className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -893,8 +1161,8 @@ export default function UtilitiesPage() {
                       <tr key={i} className="hover:bg-gray-50 transition">
                         <td className="px-4 py-3"><span className={`px-3 py-1 rounded text-sm font-medium ${item.color}`}>{item.name}</span></td>
                         <td className="px-4 py-3 flex justify-end gap-2">
-                          <button className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
-                          <button className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
+                          <button onClick={() => handleEditClassification(i)} className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
+                          <button onClick={() => handleDeleteClassification(i)} className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -944,8 +1212,8 @@ export default function UtilitiesPage() {
                         <td className="px-4 py-3 text-gray-700 text-sm">{item.division}</td>
                         <td className="px-4 py-3"><span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">{item.role}</span></td>
                         <td className="px-4 py-3 flex justify-end gap-2">
-                          <button className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
-                          <button className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
+                          <button onClick={() => handleEditAccount(i)} className="px-3 py-1 text-blue-600 border border-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition">Edit</button>
+                          <button onClick={() => handleDeleteAccount(i)} className="px-3 py-1 text-red-600 border border-red-600 hover:bg-red-50 rounded text-sm font-medium transition">Delete</button>
                         </td>
                       </tr>
                     ))}

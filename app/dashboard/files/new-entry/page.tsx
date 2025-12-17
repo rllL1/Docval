@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as pdfjsLib from 'pdfjs-dist';
-import { generateReportWithoutAI, generateReportWithHuggingFace } from '@/lib/reportGenerator';
+import { generateReportWithHuggingFace } from '@/lib/reportGenerator';
 
 // Set up PDF worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -15,7 +15,6 @@ export default function NewEntryPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: string; type: string; file: File } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [reportMode, setReportMode] = useState<'free' | 'huggingface'>('huggingface');
   const [documentTypeList, setDocumentTypeList] = useState(['Form', 'Report', 'Letter', 'Memo', 'Certificate']);
   const [classificationList, setClassificationList] = useState(['Confidential', 'Public', 'Internal', 'Restricted']);
   const [formData, setFormData] = useState({
@@ -44,8 +43,8 @@ export default function NewEntryPage() {
     const savedClassifications = localStorage.getItem('documentClassifications');
     if (savedClassifications) {
       try {
-        const classifications = JSON.parse(savedClassifications);
-        setClassificationList(classifications.map((c: any) => c.name));
+        const classifications = JSON.parse(savedClassifications) as Array<{ name: string; color: string }>;
+        setClassificationList(classifications.map((c) => c.name));
       } catch (e) {
         console.error('Failed to load classifications:', e);
       }
@@ -339,33 +338,18 @@ export default function NewEntryPage() {
                       
                       let generatedReport = '';
 
-                      if (reportMode === 'huggingface') {
-                        // Use Hugging Face AI
-                        console.log('🤗 Using Hugging Face for summarization...');
-                        const hfReport = await generateReportWithHuggingFace({
-                          title: formData.title,
-                          referenceNo: formData.referenceNo,
-                          classification: formData.classification,
-                          typeOfDocuments: formData.typeOfDocuments,
-                          extractedText: extractedText,
-                        });
-                        
-                        generatedReport = `EXECUTIVE SUMMARY\n${hfReport.summary}\n\nKEY POINTS\n${hfReport.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nCLASSIFICATION\n${hfReport.classification}\n\nNEXT STEPS\n${hfReport.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
-                        console.log('✅ Hugging Face report generated');
-                      } else {
-                        // Use free report generator (no AI needed)
-                        console.log('🎯 Using free report generator...');
-                        const report = await generateReportWithoutAI({
-                          title: formData.title,
-                          referenceNo: formData.referenceNo,
-                          classification: formData.classification,
-                          typeOfDocuments: formData.typeOfDocuments,
-                          extractedText: extractedText,
-                        });
-                        
-                        generatedReport = `EXECUTIVE SUMMARY\n${report.summary}\n\nKEY POINTS\n${report.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nCLASSIFICATION\n${report.classification}\n\nNEXT STEPS\n${report.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
-                        console.log('✅ Free report generated');
-                      }
+                      // Use Hugging Face AI for report generation
+                      console.log('🤗 Using Hugging Face for summarization...');
+                      const hfReport = await generateReportWithHuggingFace({
+                        title: formData.title,
+                        referenceNo: formData.referenceNo,
+                        classification: formData.classification,
+                        typeOfDocuments: formData.typeOfDocuments,
+                        extractedText: extractedText,
+                      });
+                      
+                      generatedReport = `EXECUTIVE SUMMARY\n${hfReport.summary}\n\nKEY POINTS\n${hfReport.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nCLASSIFICATION\n${hfReport.classification}\n\nNEXT STEPS\n${hfReport.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+                      console.log('✅ Hugging Face report generated');
 
                       // Create summary data
                       const summaryData = {

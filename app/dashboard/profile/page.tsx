@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileData, setProfileData] = useState({
     fullName: 'First Lastname',
@@ -92,7 +94,9 @@ export default function ProfilePage() {
 
         {/* Logout Button */}
         <div className={`p-4 ${!sidebarOpen && 'flex justify-center'}`}>
-          <button className={`py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition ${sidebarOpen ? 'w-full' : 'p-2'}`}>
+          <button 
+            onClick={() => router.push('/login')}
+            className={`py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition ${sidebarOpen ? 'w-full' : 'p-2'}`}>
             {sidebarOpen ? 'LOGOUT' : '🚪'}
           </button>
         </div>

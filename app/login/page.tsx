@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,7 +13,12 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Backend logic removed
+    setLoading(true);
+    // Simulate login process
+    setTimeout(() => {
+      setLoading(false);
+      router.push('/dashboard');
+    }, 500);
   };
 
   return (
